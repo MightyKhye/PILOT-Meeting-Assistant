@@ -108,7 +108,7 @@ class MeetingAnalyzer:
 
                 # Call Claude API
                 response = self.client.messages.create(
-                    model=self.model,
+                    model="claude-haiku-4-5-20251001",  # Haiku for cost-efficient chunk analysis
                     max_tokens=2000,
                     temperature=0.3,  # Lower temperature for more focused extraction
                     system=Config.PILOT_SYSTEM_CONTEXT,
