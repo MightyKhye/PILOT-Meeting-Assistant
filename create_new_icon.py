@@ -1,6 +1,5 @@
 """Create clean simplified brain icon - black and white only."""
 
-from pathlib import Path
 from PIL import Image, ImageDraw
 
 def create_brain_icon():
@@ -39,7 +38,7 @@ def create_brain_icon():
     dc.arc([34*scale, 40*scale, 46*scale, 50*scale], start=200, end=340, fill='black', width=5)
 
     # Save as NEW filename to bypass cache
-    icon_path = str(Path(__file__).parent / "pilot_icon_new.ico")
+    icon_path = r"C:\Users\khyeh\assistant\pilot_icon_new.ico"
 
     sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
     images = []

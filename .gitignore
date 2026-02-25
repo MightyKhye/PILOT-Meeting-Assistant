@@ -1,11 +1,16 @@
-# Environment and secrets
+# Environment variables - CRITICAL SECURITY
 .env
-*.env
-!.env.example
+.env.local
+.env.*.local
 config.ini
 
+# API Keys and secrets
+*_api_key*
+*secret*
+*.pem
+*.key
+
 # Python
-venv/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -26,21 +31,14 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Meeting data and recordings
-data/
-logs/
-recordings/
-meetings/
-snippets/
-failed_chunks/
-*.wav
-*.mp3
-*.mp4
-
-# User documents (may contain sensitive info)
-Documents/
-summaries/
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+.env/
 
 # IDE
 .vscode/
@@ -50,21 +48,29 @@ summaries/
 *~
 .DS_Store
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# Backup files
-*.bak
-*.tmp
-*~
+# Audio files (recordings)
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+recordings/
 
 # Logs
 *.log
-debug.log
+logs/
 
-# OS
+# Meeting data - contains potentially sensitive info
+meetings/
+summaries/
+*.json
+
+# Failed chunks queue
+failed_chunks/
+
+# User-specific config
+pilot_user_config.json
+
+# OS-specific
 Thumbs.db
 .DS_Store

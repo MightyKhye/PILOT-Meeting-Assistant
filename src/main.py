@@ -4,7 +4,7 @@ import logging
 import sys
 import threading
 from pathlib import Path
-from PIL import Image, ImageDraw
+from PIL import Image
 import pystray
 from pystray import MenuItem as Item
 
@@ -57,46 +57,16 @@ class MeetingListenerApp:
 
     def _create_icon(self, color: str = "blue") -> Image.Image:
         """
-        Create system tray icon image.
+        Load system tray icon image from assets.
 
         Args:
-            color: Icon color ('blue' for idle, 'red' for recording, 'orange' for processing)
+            color: Unused; kept for compatibility with _update_icon_state calls.
 
         Returns:
             PIL Image for system tray
         """
-        # Create a simple icon (64x64)
-        width = 64
-        height = 64
-        image = Image.new('RGB', (width, height), 'white')
-        dc = ImageDraw.Draw(image)
-
-        # Draw detailed brain with folds (black/white only)
-        # Main brain outline
-        dc.ellipse([16, 12, 48, 52], fill='white', outline='black', width=2)
-
-        # Central fissure
-        dc.line([32, 14, 32, 50], fill='black', width=1)
-
-        # Left hemisphere folds
-        dc.arc([18, 14, 30, 24], start=180, end=360, fill='black', width=1)
-        dc.arc([20, 18, 28, 26], start=180, end=360, fill='black', width=1)
-        dc.arc([18, 26, 30, 36], start=180, end=360, fill='black', width=1)
-        dc.arc([20, 30, 28, 38], start=180, end=360, fill='black', width=1)
-        dc.arc([18, 38, 30, 48], start=180, end=360, fill='black', width=1)
-
-        # Right hemisphere folds
-        dc.arc([34, 14, 46, 24], start=180, end=360, fill='black', width=1)
-        dc.arc([36, 18, 44, 26], start=180, end=360, fill='black', width=1)
-        dc.arc([34, 26, 46, 36], start=180, end=360, fill='black', width=1)
-        dc.arc([36, 30, 44, 38], start=180, end=360, fill='black', width=1)
-        dc.arc([34, 38, 46, 48], start=180, end=360, fill='black', width=1)
-
-        # Diagonal sulci for detail
-        dc.arc([19, 20, 29, 32], start=200, end=340, fill='black', width=1)
-        dc.arc([35, 20, 45, 32], start=200, end=340, fill='black', width=1)
-
-        return image
+        icon_path = Path(__file__).parent.parent / "assets" / "icon.png"
+        return Image.open(icon_path).convert("RGBA")
 
     def _update_icon_state(self, state: MeetingState):
         """Update icon based on meeting state."""

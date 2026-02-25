@@ -13,7 +13,7 @@ from src.config import Config
 
 def main():
     print("=" * 70)
-    print(" ASSISTANT")
+    print("REMS ASSISTANT")
     print("AI-Powered Meeting Intelligence")
     print("=" * 70)
 
@@ -33,12 +33,12 @@ def main():
         print("  2. Stop Recording")
         print("  3. View Status")
         print()
-        print("  4. Ask Question (Query  knowledge)")
-        print("  5. Upload  Document")
+        print("  4. Ask Question (Query REMS knowledge)")
+        print("  5. Upload REMS Document")
         print("  6. View Documents")
         print("  7. View Meeting History")
         print()
-        print("  8. Learn  from Web (Build knowledge base)")
+        print("  8. Learn NEXPLANON from Web (Build knowledge base)")
         print("  9. View Web Knowledge Status")
         print()
         print("  0. Exit")
@@ -100,7 +100,7 @@ def main():
             print("\n" + "-" * 70)
             print("ASK A QUESTION")
             print("-" * 70)
-            print("Ask anything about , past meetings, action items, decisions, etc.")
+            print("Ask anything about REMS, past meetings, action items, decisions, etc.")
             print("Examples:")
             print("  - What training requirements were discussed?")
             print("  - What are the pending action items for Sarah?")
@@ -121,7 +121,7 @@ def main():
 
         elif choice == "5":
             print("\n" + "-" * 70)
-            print("UPLOAD  DOCUMENTS")
+            print("UPLOAD REMS DOCUMENTS")
             print("-" * 70)
             print("Drag & drop files here (select multiple in Explorer)")
             print("Tip: Ctrl+Click or Ctrl+A to select multiple, then drag all at once")
@@ -212,11 +212,11 @@ def main():
 
         elif choice == "8":
             print("\n" + "-" * 70)
-            print("LEARN  FROM WEB")
+            print("LEARN NEXPLANON FROM WEB")
             print("-" * 70)
             print("This will research and compile comprehensive public knowledge about:")
-            print("  •  product information")
-            print("  •  program requirements and safety")
+            print("  • NEXPLANON product information")
+            print("  • REMS program requirements and safety")
             print("  • Training and certification procedures")
             print("  • Clinical guidelines and protocols")
             print("  • Provider requirements and compliance")
@@ -228,14 +228,14 @@ def main():
             confirm = input("Continue? (y/n): ").strip().lower()
             if confirm == 'y':
                 print("\n[Learning from public sources...]")
-                results = query_interface.learn_product_from_web()
+                results = query_interface.learn_nexplanon_from_web()
 
                 if results['success']:
                     print("\n[OK] Learning complete!")
                     print(f"  Sources researched: {results['sources_found']}")
                     print(f"  Topics learned: {results['topics_learned']}")
                     print("\nKnowledge base updated and ready for queries.")
-                    print("Saved to: meetings/_Knowledge_Base.md")
+                    print("Saved to: meetings/NEXPLANON_Knowledge_Base.md")
                 else:
                     print(f"\n[ERROR] Learning failed: {results['summary']}")
             else:

@@ -55,7 +55,7 @@ def fix_recording(wav_path: Path):
 
 def main():
     """Fix all recordings in meetings directory."""
-    meetings_dir = Path.home() / "Documents" / "Pilot" / "summaries"
+    meetings_dir = Path(r"C:\Users\khyeh\assistant\meetings")
 
     # Find all complete recordings
     recordings = list(meetings_dir.glob("complete_recording_*.wav"))

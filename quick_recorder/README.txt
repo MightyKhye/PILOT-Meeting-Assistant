@@ -15,7 +15,7 @@ SETUP:
 3. Press Ctrl+Shift+R anytime to start recording
 
 RECORDINGS SAVED TO:
-C:\Users\YourName\Documents\Sound Recordings\
+C:\Users\khyeh\Documents\Sound Recordings\
 
 USAGE:
 - Start: Ctrl+Shift+R

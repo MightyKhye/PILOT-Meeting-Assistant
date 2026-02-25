@@ -1,114 +1,115 @@
-# Pilot — AI Meeting Assistant Quick Start
+# NEXPLANON REMS Meeting Listener - Quick Start Guide
 
-## Features
+## 🚀 Features
 
 ### Core Features
 - **Real-time Audio Capture**: Records ambient audio from your microphone
-- **Automatic Transcription**: Uses OpenAI Whisper to transcribe speech
+- **Automatic Transcription**: Uses AssemblyAI to transcribe speech
 - **AI Analysis**: Claude identifies action items, decisions, and key points
 - **Windows Notifications**: Get instant alerts for important items
 - **Confidence Tracking**: Shows transcript quality and flags unclear sections
 
-### Enhanced Features
-- **Persistent Memory**: Remembers all previous meetings
+### New Enhanced Features
+- **Persistent Memory**: Remembers ALL previous meetings forever
 - **Contextual Learning**: Builds on past meetings for better understanding
-- **Live Query**: Ask questions about current or past meetings anytime
-- **Document Upload**: Add supporting documents to your knowledge base
-- **System Tray Interface**: One-click access from your system tray
+- **Live Query**: Ask questions about REMS or past meetings anytime
+- **Document Upload**: Add REMS supporting documents to knowledge base
+- **Desktop Shortcut**: One-click access from your desktop
 
-## Setup
+## 🖥️ Setup Desktop Shortcut
 
-See `README.md` for full setup instructions. Minimum required:
+1. Double-click `create_desktop_shortcut.bat`
+2. A shortcut will appear on your desktop
+3. Click the shortcut anytime to launch the Meeting Listener
 
-1. Copy `.env.example` to `.env` and add your API keys
-2. Set `MY_NAME` in `.env` (used for action item detection)
-3. Run: `python -m src.main`
-
-## How to Use
+## 📖 How to Use
 
 ### Basic Meeting Recording
 
-1. **Launch the app** — `python -m src.main`
-2. **Right-click the system tray icon** → Start Recording
-3. **Have your meeting** — the app captures audio in 30-second chunks
-4. **Stop recording** → system tray → Stop Recording
-5. **Find your summary** — opens automatically in your browser
+1. **Launch the app** (click desktop shortcut or run `launch_meeting_listener.bat`)
+2. **Choose option 1** to start recording
+3. **Have your meeting** - the app will capture audio from your room
+4. **Choose option 2** to stop recording when done
+5. **Find your summary** - Check your Downloads folder for the meeting summary
 
 ### Query Past Meetings
 
-Use the query feature from the tray menu to ask questions like:
-- "What training requirements were discussed in past meetings?"
-- "What are the pending action items from last week?"
-- "What decisions were made about the vendor timeline?"
+1. **Choose option 4** - Ask Question
+2. **Type your question**, for example:
+   - "What training requirements were discussed in past meetings?"
+   - "What are Sarah's pending action items?"
+   - "What decisions were made about rural site training?"
+3. **Get instant answers** - Claude will search all meetings and documents
 
-Claude searches all meeting history and uploaded documents to answer.
+### Upload REMS Documents
 
-### Upload Documents
-
-1. Select **Upload Document** from the tray menu
-2. Enter the full path to your document
-   - Example: `C:\Users\YourName\Documents\YourDocument.pdf`
-3. The document is saved and used for future queries
+1. **Choose option 5** - Upload REMS Document
+2. **Enter the full path** to your document
+   - Example: `C:\Users\khyeh\Documents\NEXPLANON_REMS_Guide.pdf`
+3. **Document is saved** - Will be used for future queries
 
 ### View History
 
-- **Documents**: See all uploaded documents
-- **Meetings**: View summaries of past meetings
+- **Option 6**: See all uploaded documents
+- **Option 7**: View summaries of past meetings
 
-## Output Files
+## 📁 Output Files
 
-All files are saved to `~/Documents/Pilot/`:
+All files are saved in the `assistant` folder:
 
-- **summaries/**: HTML meeting summaries (open in browser)
-- **recordings/**: Full audio recordings
-- **snippets/**: Audio clips per action item
+- **meetings/**: Meeting summaries (.md files)
+- **meetings/persistent_memory.json**: All historical data
+- **recordings/**: Raw audio chunks
+- **Downloads/**: Copies of summaries for easy access
 
-## Understanding the Output
+## 🎯 Understanding Output
 
 ### Meeting Summary Format
 
 ```
-MEETING SUMMARY
-Date: 2026-02-18 14:00
+NEXPLANON REMS MEETING SUMMARY
+Date: 2026-02-05 17:30
 Transcription Quality: 88%
 
 ACTION ITEMS
-- [ ] Alex: Send follow-up email to vendor (Due: Friday) - Confidence: high
+- [ ] Sarah: Update REMS training docs (Due: Friday) - Confidence: high
 
 DECISIONS
-- Approved virtual training for remote sites (Confidence: high)
+- Approved virtual training for rural sites (Confidence: high)
 
 ITEMS REQUIRING CLARIFICATION
-- Specific timeline for provider authorization
+- Specific requirements for rural provider authorization
 
 MEETING SYNOPSIS
 [Professional summary of key discussion points]
 
-COMPLETE TRANSCRIPT
-[Full transcript]
+PARTICIPANTS
+[List of identified participants]
 
----
-Transcript Notes:
-[1] Low confidence (45%) — "some unclear phrase" may be inaccurate
+COMPLETE TRANSCRIPT
+[Full transcript with confidence markers]
+[Low confidence sections marked like this] (confidence: 45% - unclear)
 ```
 
-### Confidence Markers
+### Confidence Markers in Transcript
 
-High-confidence text appears as-is. Low-confidence passages are marked with footnote numbers in the transcript body (e.g., `text[1]`) and explained in a **Transcript Notes** section at the bottom.
+- **No marker**: High confidence (70%+)
+- **[text] (confidence: 65%)**: Moderate confidence
+- **[text] (confidence: 45% - unclear)**: Low confidence, may be inaccurate
 
-## Tips
+## 💡 Tips
 
 1. **Speak clearly** near the microphone for best transcription
-2. **Let it run** — the app processes in 30-second chunks automatically
-3. **Use queries** — ask questions to find information across all past meetings
-4. **Upload documents** — add domain reference material for better AI context
-5. **Check quality** — if overall quality is below 70%, audio may be too quiet
+2. **Let it run** - The app processes in 30-second chunks automatically
+3. **Ask questions** - Use the query feature to find information from past meetings
+4. **Upload documents** - Add REMS guides for better AI responses
+5. **Check quality** - If overall quality is below 70%, audio may be too quiet
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### No audio captured
-- Run `python -m src.audio_capture --list-devices` to list available devices
-- Set `microphone_device_index` in `config.ini` if auto-detection picks the wrong mic
+- Check that microphone device 12 (AMD Microphone Array) is working
+- Speak louder or move closer to microphone
 - Verify Windows microphone permissions
 
 ### Low transcription quality
@@ -117,17 +118,23 @@ High-confidence text appears as-is. Low-confidence passages are marked with foot
 - Check that audio is audible when played back
 
 ### Query not finding information
-- Make sure recording was completed before querying
-- Upload relevant documents for better context
+- Make sure recording was completed (option 2: Stop Recording)
+- Upload relevant REMS documents for better context
 - Try rephrasing your question
 
-### Notifications not showing
-- Check Windows Focus Assist settings
-- Run `python -m src.notifier` to test notifications directly
+### Desktop shortcut not working
+- Right-click shortcut → Properties
+- Verify "Start in" path points to assistant folder
+- Re-run `create_desktop_shortcut.bat`
 
-## Support
+## 📞 Support
 
 For issues, check:
 - `logs/` folder for error messages
-- Verify API keys are set correctly in `.env`
-- See the Troubleshooting section in `README.md`
+- Verify API keys in `.env` file
+- Ensure `venv` is properly activated
+
+---
+
+**Version**: Enhanced with Memory & Query Features
+**Last Updated**: 2026-02-05

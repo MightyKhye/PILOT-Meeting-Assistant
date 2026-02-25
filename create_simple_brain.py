@@ -1,6 +1,5 @@
 """Create ultra-simple brain icon - just outline and minimal detail."""
 
-from pathlib import Path
 from PIL import Image, ImageDraw
 
 def create_brain_icon():
@@ -28,7 +27,7 @@ def create_brain_icon():
     dc.arc([34*scale, 34*scale, 44*scale, 44*scale], start=200, end=340, fill='black', width=4)
 
     # Save
-    icon_path = str(Path(__file__).parent / "pilot_icon_new.ico")
+    icon_path = r"C:\Users\khyeh\assistant\pilot_icon_new.ico"
 
     sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
     images = []

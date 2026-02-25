@@ -1,6 +1,5 @@
 """Create brain icon file for Pilot."""
 
-from pathlib import Path
 from PIL import Image, ImageDraw
 
 def create_brain_icon():
@@ -57,7 +56,7 @@ def create_brain_icon():
     dc.arc([34*scale, 32*scale, 44*scale, 44*scale], start=200, end=340, fill='black', width=2)
 
     # Save as .ico with multiple sizes
-    icon_path = str(Path(__file__).parent / "pilot_brain.ico")
+    icon_path = r"C:\Users\khyeh\assistant\pilot_brain.ico"
 
     # Create multiple sizes for the icon
     sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]

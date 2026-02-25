@@ -126,7 +126,7 @@ def recover_meeting(start_time: str, end_time: str):
     summary_filename = f"meeting_{meeting_id}_recovered.md"
     summary_path = Config.MEETINGS_DIR / summary_filename
 
-    metadata = f"""Business MEETING SUMMARY (RECOVERED)
+    metadata = f"""NEXPLANON REMS MEETING SUMMARY (RECOVERED)
 Date: {meeting_start.strftime('%Y-%m-%d %H:%M')}
 Transcription Quality: {avg_confidence:.1%}
 Chunks Processed: {len(transcriptions)}

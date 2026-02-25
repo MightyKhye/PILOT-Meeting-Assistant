@@ -1,6 +1,5 @@
 """Create brain icon similar to typical brain logos - top-down view with organic curves."""
 
-from pathlib import Path
 from PIL import Image, ImageDraw
 
 def create_brain_icon():
@@ -66,7 +65,7 @@ def create_brain_icon():
     dc.arc([33*scale, 40*scale, 42*scale, 46*scale], start=260, end=20, fill='black', width=3)
 
     # Save
-    icon_path = str(Path(__file__).parent / "pilot_brain_v3.ico")
+    icon_path = r"C:\Users\khyeh\assistant\pilot_brain_v3.ico"
 
     sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
     images = []
