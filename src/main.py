@@ -1,5 +1,8 @@
 """Main entry point for Pilot system tray application."""
 
+import ctypes
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("pilot.meeting.assistant")
+
 import logging
 import sys
 import threading
@@ -14,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.meeting_manager import MeetingManager, MeetingState
 from src.config import Config
 from src.minimal_notifier import MinimalNotifier
+from src.main_window import MainWindow
 
 # Configure logging
 log_file = Config.LOGS_DIR / "pilot.log"
@@ -46,8 +50,16 @@ class MeetingListenerApp:
         # Initialize minimal notifier
         self.minimal_notifier = MinimalNotifier()
 
+        # Main dashboard window (created in run())
+        self.main_window: MainWindow = None
+
         # Create system tray icon
         self.icon_image = self._create_icon()
+
+    @property
+    def upload_in_progress(self) -> bool:
+        """True while an upload is being processed. Used by tray menu enabled lambdas."""
+        return self.main_window._upload_in_progress if self.main_window else False
 
     def _create_icon(self, color: str = "blue") -> Image.Image:
         """
@@ -102,6 +114,12 @@ class MeetingListenerApp:
 
         if self.icon:
             self.icon.title = status_map.get(state, 'Pilot')
+
+        chunk_count = len(self.manager.transcriptions)
+
+        # Update main window
+        if self.main_window:
+            self.main_window.update_state(state, chunk_count)
 
     def _toggle_recording(self, icon: pystray.Icon = None):
         """Toggle recording on/off with single click."""
@@ -170,7 +188,11 @@ class MeetingListenerApp:
             return
 
         if not self.meeting_in_progress:
-            logger.warning("No meeting in progress (flag is False)")
+            if self.manager.get_state() == MeetingState.ERROR:
+                logger.info("stop_recording: resetting stuck ERROR state to IDLE")
+                self.manager._update_state(MeetingState.IDLE)
+            else:
+                logger.warning("No meeting in progress (flag is False)")
             return
 
         if self.manager.state == MeetingState.IDLE:
@@ -275,8 +297,11 @@ class MeetingListenerApp:
                     logger.warning(f"Could not save status report to file: {save_error}")
                     # Don't fail the whole operation if file save fails
 
-                # Create status check window
-                self._show_status_check_window(result)
+                # Show status check window on main thread
+                if self.main_window:
+                    self.main_window.root.after(0, self._show_status_check_window, result)
+                else:
+                    self._show_status_check_window(result)
 
                 logger.info("Status check completed")
 
@@ -289,15 +314,18 @@ class MeetingListenerApp:
         threading.Thread(target=status_check_thread, daemon=True).start()
 
     def _show_status_check_window(self, result: dict):
-        """Show comprehensive status check results in a window."""
+        """Show comprehensive status check results in a Toplevel window."""
         import tkinter as tk
         from tkinter import scrolledtext
 
-        # Create window on main thread
         def create_window():
-            window = tk.Tk()
+            parent = self.main_window.root if self.main_window else None
+            if parent:
+                window = tk.Toplevel(parent)
+            else:
+                window = tk.Tk()
             window.title("Pilot - Project Status Check")
-            window.geometry("760x700")  # Wider window for comprehensive report
+            window.geometry("760x700")
 
             # Header with confidence
             confidence = result['confidence']
@@ -462,149 +490,20 @@ class MeetingListenerApp:
             )
             close_btn.pack(side=tk.RIGHT, padx=10, pady=10)
 
-            window.mainloop()
+            # No mainloop() call — parent's mainloop handles this Toplevel.
+            # For the fallback standalone Tk case we do need it.
+            if parent is None:
+                window.mainloop()
 
-        # Run on main thread
         create_window()
 
     def query_meetings(self, icon: pystray.Icon = None, item: Item = None):
-        """Allow user to ask questions about meetings."""
-        import subprocess
+        """Show main window focused on the query bar."""
+        if self.main_window:
+            self.main_window.root.after(0, self.main_window.focus_query)
+        else:
+            logger.warning("query_meetings called before main window exists")
 
-        def show_query_window():
-            # Use Windows native input box via PowerShell (guaranteed to work)
-            powershell_cmd = '''
-Add-Type -AssemblyName Microsoft.VisualBasic
-[Microsoft.VisualBasic.Interaction]::InputBox("What do you want to know about your meetings?`n`nExamples:`n• When were dates offered to McKesson?`n• What action items are assigned to Ian?", "Query Meetings - Pilot")
-'''
-            try:
-                result = subprocess.run(
-                    ['powershell', '-Command', powershell_cmd],
-                    capture_output=True,
-                    text=True,
-                    timeout=120
-                )
-
-                question = result.stdout.strip()
-
-                if not question:
-                    logger.info("Query cancelled or empty")
-                    return
-
-                logger.info(f"Query submitted: '{question}'")
-
-                # Process query in background
-                def process_query():
-                    try:
-                        meeting_history = self.manager.memory.memory_data.get('meetings', [])
-
-                        if not meeting_history:
-                            self.minimal_notifier.notify("No meetings recorded yet", duration=3)
-                            return
-
-                        # Get answer from AI
-                        result = self.manager.analyzer.query_meetings(question, meeting_history)
-
-                        # Show answer window
-                        self._show_query_result(question, result)
-
-                    except Exception as e:
-                        logger.error(f"Error processing query: {e}")
-                        self.minimal_notifier.notify(f"Query failed: {str(e)}", duration=5)
-
-                threading.Thread(target=process_query, daemon=True).start()
-                self.minimal_notifier.notify("Searching meetings...", duration=2)
-
-            except subprocess.TimeoutExpired:
-                logger.warning("Query input timed out")
-            except Exception as e:
-                logger.error(f"Error showing query window: {e}")
-
-        # Run on main thread
-        show_query_window()
-
-    def _show_query_result(self, question: str, result: dict):
-        """Show query result window."""
-        import tkinter as tk
-        from tkinter import scrolledtext
-
-        def create_window():
-            window = tk.Tk()
-            window.title("Query Result")
-            window.geometry("600x450")
-
-            # Header with question
-            header = tk.Frame(window, bg='#2C3E50')
-            header.pack(fill=tk.X)
-
-            question_label = tk.Label(
-                header,
-                text=f"Q: {question}",
-                bg='#2C3E50',
-                fg='white',
-                font=('Segoe UI', 11, 'bold'),
-                wraplength=550,
-                justify='left',
-                padx=20,
-                pady=15
-            )
-            question_label.pack(anchor='w')
-
-            # Confidence indicator
-            confidence = result['confidence']
-            conf_color = {
-                'HIGH': '#27ae60',
-                'MEDIUM': '#f39c12',
-                'LOW': '#e74c3c'
-            }.get(confidence, '#95a5a6')
-
-            conf_frame = tk.Frame(header, bg='#2C3E50')
-            conf_frame.pack(fill=tk.X, padx=20, pady=(0, 15))
-
-            conf_label = tk.Label(
-                conf_frame,
-                text=f"Confidence: {confidence}",
-                bg='#2C3E50',
-                fg=conf_color,
-                font=('Segoe UI', 9, 'bold')
-            )
-            conf_label.pack(side=tk.LEFT)
-
-            # Answer text
-            text_area = scrolledtext.ScrolledText(
-                window,
-                wrap=tk.WORD,
-                font=('Segoe UI', 11),
-                bg='#ecf0f1',
-                fg='#2c3e50',
-                padx=20,
-                pady=20,
-                relief=tk.FLAT
-            )
-            text_area.pack(fill=tk.BOTH, expand=True)
-            text_area.insert(tk.END, result['answer'])
-            text_area.config(state=tk.DISABLED)
-
-            # Footer
-            footer = tk.Frame(window, bg='#34495e', height=40)
-            footer.pack(fill=tk.X)
-
-            sources = result.get('sources', [])
-            footer_text = f"Searched {len(sources)} meetings"
-
-            footer_label = tk.Label(
-                footer,
-                text=footer_text,
-                bg='#34495e',
-                fg='#bdc3c7',
-                font=('Segoe UI', 9),
-                pady=10
-            )
-            footer_label.pack()
-
-            window.mainloop()
-
-        create_window()
 
     def open_meetings_folder(self, icon: pystray.Icon = None, item: Item = None):
         """Open meetings folder in file explorer."""
@@ -613,65 +512,43 @@ Add-Type -AssemblyName Microsoft.VisualBasic
 
         meetings_dir = Config.MEETINGS_DIR
         meetings_dir.mkdir(exist_ok=True)
+        _flags = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
 
         try:
             if sys.platform == 'win32':
                 os.startfile(meetings_dir)
             elif sys.platform == 'darwin':
-                subprocess.run(['open', meetings_dir])
+                subprocess.run(['open', meetings_dir], creationflags=_flags)
             else:
-                subprocess.run(['xdg-open', meetings_dir])
+                subprocess.run(['xdg-open', meetings_dir], creationflags=_flags)
         except Exception as e:
             logger.error(f"Failed to open meetings folder: {e}")
 
+    def open_summaries_folder(self, icon: pystray.Icon = None, item: Item = None):
+        """Open summaries folder in file explorer."""
+        import subprocess
+        import os
+
+        summaries_dir = Config.SUMMARIES_DIR
+        summaries_dir.mkdir(parents=True, exist_ok=True)
+        _flags = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
+
+        try:
+            if sys.platform == 'win32':
+                os.startfile(summaries_dir)
+            elif sys.platform == 'darwin':
+                subprocess.run(['open', summaries_dir], creationflags=_flags)
+            else:
+                subprocess.run(['xdg-open', summaries_dir], creationflags=_flags)
+        except Exception as e:
+            logger.error(f"Failed to open summaries folder: {e}")
+
     def upload_recording(self, icon: pystray.Icon = None, item: Item = None):
-        """Upload and process an audio recording."""
-        import tkinter as tk
-        from tkinter import filedialog
-        import threading
-
-        def upload_thread():
-            try:
-                # Create file dialog
-                root = tk.Tk()
-                root.withdraw()  # Hide main window
-                root.attributes('-topmost', True)  # Bring to front
-
-                # Open file picker
-                file_path = filedialog.askopenfilename(
-                    title="Select Meeting Recording",
-                    filetypes=[
-                        ("Audio Files", "*.wav *.m4a *.mp3 *.mp4 *.aac *.flac *.ogg"),
-                        ("iPhone Voice Memos", "*.m4a"),
-                        ("All Files", "*.*")
-                    ]
-                )
-
-                root.destroy()
-
-                if not file_path:
-                    logger.info("Upload cancelled")
-                    return
-
-                logger.info(f"Processing uploaded file: {file_path}")
-                self.minimal_notifier.notify("Processing audio file...", duration=3)
-
-                # Process the file
-                from pathlib import Path
-                import sys
-                sys.path.insert(0, str(Path(__file__).parent.parent))
-
-                from process_audio_file import process_audio_file
-                process_audio_file(file_path)
-
-                self.minimal_notifier.notify("Audio processed successfully!", duration=3)
-
-            except Exception as e:
-                logger.error(f"Error processing upload: {e}", exc_info=True)
-                self.minimal_notifier.notify("Failed to process audio", duration=3)
-
-        # Run in background thread
-        threading.Thread(target=upload_thread, daemon=True).start()
+        """Upload and process an audio recording via the main window."""
+        if self.main_window:
+            self.main_window.trigger_upload()
+        else:
+            logger.warning("upload_recording called before main window exists")
 
     def exit_app(self, icon: pystray.Icon = None, item: Item = None):
         """Exit application with proper cleanup."""
@@ -694,7 +571,17 @@ Add-Type -AssemblyName Microsoft.VisualBasic
             logger.info("Stopping system tray icon...")
             self.icon.stop()
 
+        # Destroy main window — this stops the tkinter mainloop
+        if self.main_window:
+            logger.info("Destroying main window...")
+            self.main_window.destroy()
+
         logger.info("Application exited successfully")
+
+    def _show_window(self, icon: pystray.Icon = None, item: Item = None):
+        """Bring the main dashboard window to the foreground."""
+        if self.main_window:
+            self.main_window.root.after(0, self.main_window.show)
 
     def _create_menu(self):
         """
@@ -707,10 +594,12 @@ Add-Type -AssemblyName Microsoft.VisualBasic
         - When PROCESSING: no default item, left-click does nothing
         """
         return pystray.Menu(
+            Item('Show Window', self._show_window),
+            pystray.Menu.SEPARATOR,
             Item(
                 'Start Recording',
                 self.start_recording,
-                enabled=lambda item: not self.meeting_in_progress,
+                enabled=lambda item: not self.meeting_in_progress and not self.upload_in_progress,
                 default=lambda item: self.manager.get_state() == MeetingState.IDLE
             ),
             Item(
@@ -722,14 +611,15 @@ Add-Type -AssemblyName Microsoft.VisualBasic
             Item('Status Check', self.run_status_check),
             Item('Query Meetings', self.query_meetings),
             pystray.Menu.SEPARATOR,
-            Item('Upload Meeting Recording', self.upload_recording),
+            Item('Upload Meeting Recording(s)', self.upload_recording),
             Item('Open Meetings Folder', self.open_meetings_folder),
+            Item('Open Summaries Folder', self.open_summaries_folder),
             pystray.Menu.SEPARATOR,
             Item('Exit', self.exit_app)
         )
 
     def run(self):
-        """Run the system tray application."""
+        """Run the application: main window on main thread, tray icon in background."""
         logger.info("Starting Pilot application...")
 
         # Validate configuration
@@ -752,9 +642,10 @@ Add-Type -AssemblyName Microsoft.VisualBasic
             self.meeting_in_progress = True
             logger.info(f"Initial state sync: Meeting in progress (state: {self.manager.state})")
 
-        # Create system tray icon
-        # Left-click = Activates default MenuItem (Start/Stop based on state)
-        # Right-click = Show full menu
+        # Build main window (must happen before pystray starts calling callbacks)
+        self.main_window = MainWindow(self)
+
+        # Create tray icon
         self.icon = pystray.Icon(
             'remshadow',
             self.icon_image,
@@ -762,18 +653,21 @@ Add-Type -AssemblyName Microsoft.VisualBasic
             menu=self._create_menu()
         )
 
-        # Run (this blocks until exit)
-        logger.info("System tray icon created, running...")
+        # Run tray icon in a background thread so tkinter owns the main thread
+        tray_thread = threading.Thread(
+            target=self.icon.run, daemon=True, name="tray"
+        )
+        tray_thread.start()
+
+        logger.info("System tray icon started in background thread")
         print("\n" + "=" * 60)
         print("Pilot started!")
         print("=" * 60)
-        print("\nLook for the microphone icon in your system tray.")
-        print("Right-click the icon to start recording.\n")
         print("Logs are saved to:", log_file)
         print("=" * 60 + "\n")
 
         try:
-            self.icon.run()
+            self.main_window.run()  # blocks on tkinter mainloop
         except KeyboardInterrupt:
             logger.info("Interrupted by user")
             self.exit_app()

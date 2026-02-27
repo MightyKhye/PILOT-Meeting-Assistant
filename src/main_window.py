@@ -478,6 +478,12 @@ class MainWindow:
 
     def _toggle_recording(self):
         if self._state == MeetingState.IDLE:
+            if self._upload_in_progress:
+                self.app.minimal_notifier.notify(
+                    "Upload in progress — please wait for it to finish before recording",
+                    duration=3,
+                )
+                return
             threading.Thread(
                 target=self.app.start_recording, daemon=True
             ).start()
@@ -495,6 +501,14 @@ class MainWindow:
 
     def _start_upload(self):
         if self._upload_in_progress:
+            return
+        if self._state == MeetingState.RECORDING:
+            self._upload_status_label.config(text="Cannot upload while recording is active")
+            self._upload_status_label.pack(anchor="w")
+            def _clear():
+                self._upload_status_label.pack_forget()
+                self._upload_status_label.config(text="")
+            self.root.after(3000, _clear)
             return
 
         file_paths = filedialog.askopenfilenames(
