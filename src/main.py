@@ -13,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.meeting_manager import MeetingManager, MeetingState
 from src.config import Config
-from src.recording_indicator import RecordingIndicator
 from src.minimal_notifier import MinimalNotifier
 
 # Configure logging
@@ -42,12 +41,7 @@ class MeetingListenerApp:
         self.meeting_in_progress = False
         self._stop_in_progress = False  # Guards against duplicate stop triggers within this process
 
-        # Initialize recording indicator if enabled
-        if Config.INDICATOR_ENABLED:
-            self.indicator = RecordingIndicator()
-            self.indicator.on_click = self.stop_recording
-        else:
-            self.indicator = None
+        self.indicator = None
 
         # Initialize minimal notifier
         self.minimal_notifier = MinimalNotifier()
@@ -108,16 +102,6 @@ class MeetingListenerApp:
 
         if self.icon:
             self.icon.title = status_map.get(state, 'Pilot')
-
-        # Update on-screen indicator.
-        # is_finalizing via this callback path only works when state CHANGES (RECORDING→PROCESSING).
-        # When stop is clicked mid-chunk (state already PROCESSING), this callback never fires for
-        # the PROCESSING transition — that case is handled by the direct push in stop_recording().
-        if self.indicator:
-            chunk_count = len(self.manager.transcriptions)
-            is_finalizing = (state == MeetingState.PROCESSING and self.manager._stopping)
-            logger.info(f"[CALLBACK] state={state.value}, _stopping={self.manager._stopping}, is_finalizing={is_finalizing}")
-            self.indicator.update_state(state, chunk_count, is_finalizing)
 
     def _toggle_recording(self, icon: pystray.Icon = None):
         """Toggle recording on/off with single click."""
@@ -181,9 +165,6 @@ class MeetingListenerApp:
 
     def stop_recording(self, icon: pystray.Icon = None, item: Item = None):
         """Stop meeting recording."""
-        # Deduplicate: indicator click and tray menu can both fire within 1-2ms of each other.
-        # _stop_in_progress is set here (not inside stop_meeting()) so it blocks before the
-        # thread is even launched, unlike manager._stopping which is set too late.
         if self._stop_in_progress:
             logger.warning("stop_recording() duplicate call ignored (_stop_in_progress=True)")
             return
@@ -201,17 +182,6 @@ class MeetingListenerApp:
         # Claim the stop slot immediately before launching the thread
         self._stop_in_progress = True
         logger.info(f"[STOP] stop_recording() proceeding (manager state={self.manager.state.value})")
-
-        # IMMEDIATELY push is_finalizing=True to the indicator.
-        # We cannot rely on _state_change_callback for this: _update_state() only fires the
-        # callback when state CHANGES. If stop is clicked while state is already PROCESSING
-        # (mid-chunk Claude/AssemblyAI call), the PROCESSING->PROCESSING "transition" in
-        # stop_meeting() fires no callback at all, so is_finalizing would never reach the indicator.
-        # Pushing directly here works regardless of current state.
-        if self.indicator and self.indicator.window:
-            chunk_count = len(self.manager.transcriptions)
-            logger.info(f"[STOP] Pushing is_finalizing=True to indicator (chunk_count={chunk_count})")
-            self.indicator.update_state(MeetingState.PROCESSING, chunk_count, is_finalizing=True)
 
         self.minimal_notifier.notify("Stopping recording...", duration=2)
 
@@ -715,11 +685,6 @@ Add-Type -AssemblyName Microsoft.VisualBasic
             import time
             time.sleep(2)
 
-        # Stop indicator
-        if self.indicator:
-            logger.info("Stopping recording indicator...")
-            self.indicator.stop()
-
         # Cleanup manager (will join all threads with timeout)
         logger.info("Cleaning up meeting manager...")
         self.manager.cleanup()
@@ -778,11 +743,6 @@ Add-Type -AssemblyName Microsoft.VisualBasic
             return
 
         logger.info("Configuration valid")
-
-        # Start on-screen indicator if enabled
-        if self.indicator:
-            self.indicator.start()
-            logger.info("On-screen indicator started")
 
         # Sync meeting_in_progress flag with actual manager state
         if self.manager.state == MeetingState.IDLE:

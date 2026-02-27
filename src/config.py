@@ -99,11 +99,6 @@ class Config:
     SNIPPET_AFTER_DURATION = float(os.getenv('SNIPPET_AFTER_DURATION', '5.0'))
     SNIPPET_ENABLED = os.getenv('SNIPPET_ENABLED', 'true').lower() == 'true'
 
-    # Recording Indicator Configuration
-    INDICATOR_ENABLED = os.getenv('INDICATOR_ENABLED', 'true').lower() == 'true'
-    INDICATOR_SHOW_TIME = os.getenv('INDICATOR_SHOW_TIME', 'true').lower() == 'true'
-    INDICATOR_SHOW_CHUNKS = os.getenv('INDICATOR_SHOW_CHUNKS', 'true').lower() == 'true'
-
     # Live Action Item Notifications
     LIVE_ACTION_NOTIFICATIONS = os.getenv('LIVE_ACTION_NOTIFICATIONS', 'true').lower() == 'true'
     NOTIFICATION_DURATION = int(os.getenv('NOTIFICATION_DURATION', '5'))
