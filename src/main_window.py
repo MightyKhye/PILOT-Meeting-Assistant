@@ -1,5 +1,6 @@
 """Persistent main dashboard window for Pilot."""
 
+import logging
 import os
 import sys
 import time
@@ -9,6 +10,8 @@ from tkinter import ttk, scrolledtext, filedialog
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -60,16 +63,6 @@ class MainWindow:
         self.root.minsize(460, 580)
         self.root.configure(bg=BG)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
-
-        # Set Windows AppUserModelID so the taskbar groups the window correctly
-        # and shows the Pilot icon rather than the generic Python icon.
-        try:
-            import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "Pilot.MeetingAssistant"
-            )
-        except Exception:
-            pass
 
         # Set window icon — ICO file contains all sizes (16/24/32/48/64/128/256px),
         # Windows picks the right one automatically. iconphoto is intentionally
