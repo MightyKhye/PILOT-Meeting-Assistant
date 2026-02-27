@@ -66,7 +66,8 @@ class MeetingListenerApp:
             PIL Image for system tray
         """
         icon_path = Path(__file__).parent.parent / "assets" / "icon.png"
-        return Image.open(icon_path).convert("RGBA")
+        img = Image.open(icon_path).convert("RGBA")
+        return img.resize((64, 64), Image.LANCZOS)
 
     def _update_icon_state(self, state: MeetingState):
         """Update icon based on meeting state."""
