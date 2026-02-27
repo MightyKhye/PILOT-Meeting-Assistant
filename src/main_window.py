@@ -71,18 +71,12 @@ class MainWindow:
         except Exception:
             pass
 
-        # Set window icon — iconbitmap (ICO) for taskbar/Alt+Tab, iconphoto (PNG) for title bar
+        # Set window icon — ICO file contains all sizes (16/24/32/48/64/128/256px),
+        # Windows picks the right one automatically. iconphoto is intentionally
+        # omitted: it overrides iconbitmap with a blurry OS-downscaled result.
         try:
             icon_ico_path = Path(__file__).parent.parent / "assets" / "icon.ico"
             self.root.iconbitmap(str(icon_ico_path))
-        except Exception:
-            pass
-        try:
-            from PIL import Image, ImageTk
-            icon_path = Path(__file__).parent.parent / "assets" / "icon.png"
-            _img = Image.open(icon_path).convert("RGBA")
-            self._icon_photo = ImageTk.PhotoImage(_img)
-            self.root.iconphoto(True, self._icon_photo)
         except Exception:
             pass
 
