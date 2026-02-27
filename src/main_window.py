@@ -392,6 +392,11 @@ class MainWindow:
                 state=tk.NORMAL, cursor="hand2",
                 activebackground="#0096b3",
             )
+            # Safety net: re-enable the upload button if no upload is active.
+            # _start_upload() disables it and _finish() re-enables it, but if an
+            # exception prevents _finish from running the button would stay grey.
+            if not self._upload_in_progress:
+                self._upload_btn.config(state=tk.NORMAL, cursor="hand2")
             self._hide_live_feed()
             self._stop_timer()
             self._recording_start = None
