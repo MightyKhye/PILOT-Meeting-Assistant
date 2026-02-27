@@ -486,7 +486,7 @@ class HTMLSummaryGenerator:
                 Your browser does not support the audio element.
             </audio>
             <div style="margin-top: 8px; font-size: 12px; color: #555;">
-                📁 File: <span style="font-family: monospace;">{complete_recording_path}</span>
+                📁 <span style="font-family: monospace;">{relative_path}</span>
             </div>
         </div>'''
 
