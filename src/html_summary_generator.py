@@ -485,6 +485,9 @@ class HTMLSummaryGenerator:
                 <source src="{relative_path}" type="audio/wav">
                 Your browser does not support the audio element.
             </audio>
+            <div style="margin-top: 8px; font-size: 12px; color: #555;">
+                📁 File: <span style="font-family: monospace;">{complete_recording_path}</span>
+            </div>
         </div>'''
 
     def _generate_action_items_html(self, action_items: list, snippet_paths: Dict[str, Path], action_items_with_snippets: Optional[List[dict]] = None) -> str:
