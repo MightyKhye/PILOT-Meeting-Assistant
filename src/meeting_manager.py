@@ -1164,11 +1164,24 @@ Date: {self.meeting_start_time.strftime('%Y-%m-%d %H:%M')}
         # Use provided transcriptions or fallback to self.transcriptions
         transcriptions_to_use = transcriptions if transcriptions is not None else self.transcriptions
 
-        # Combine all word-level timestamps from all chunks
+        # Combine all word-level timestamps from all chunks, adjusting for chunk offset
         all_words = []
         for transcription in transcriptions_to_use:
             if 'words' in transcription and transcription['words']:
-                all_words.extend(transcription['words'])
+                # Compute this chunk's offset from meeting start so word timestamps
+                # become recording-relative rather than chunk-relative (0→30s per chunk)
+                chunk_ts = transcription.get('chunk_timestamp') or transcription.get('timestamp')
+                offset = 0.0
+                if chunk_ts and self.meeting_start_time:
+                    if isinstance(chunk_ts, str):
+                        chunk_ts = datetime.fromisoformat(chunk_ts)
+                    if isinstance(chunk_ts, datetime):
+                        offset = max(0.0, (chunk_ts - self.meeting_start_time).total_seconds())
+                for word in transcription['words']:
+                    adjusted = dict(word)
+                    adjusted['start'] = word.get('start', 0.0) + offset
+                    adjusted['end'] = word.get('end', 0.0) + offset
+                    all_words.append(adjusted)
 
         if not all_words:
             logger.warning("No word-level timestamps available")
